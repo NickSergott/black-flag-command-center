@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black Flag Motorsport Co. — AI+Design Command Center</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black: #050505;
+    --black-2: #0A0A0A;
+    --charcoal: #141414;
+    --charcoal-2: #1E1E1E;
+    --charcoal-3: #2A2A2A;
+    --bone: #E8E8E8;
+    --bone-dim: #999;
+    --red: #E60000;
+    --red-dim: #8B0000;
+    --yellow: #FFD100;
+    --green: #00E84A;
+    --green-dim: #006E23;
+    --amber: #FF8C00;
+    --gray: #555;
+    --gray-light: #777;
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  html, body { height: 100%; }
+  body {
+    background: var(--black);
+    color: var(--bone);
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    background: var(--charcoal);
+    border-bottom: 2px solid var(--red);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    height: 56px;
+    flex-shrink: 0;
+    gap: 16px;
+    z-index: 100;
+  }
+  .topbar .brand {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  .topbar .brand .red { color: var(--red); }
+  .topbar .brand .sub {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    color: var(--gray);
+    display: block;
+    margin-top: -2px;
+  }
+  .status-group { display: flex; gap: 12px; margin-left: auto; align-items: center; }
+  .status-item { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-light); }
+  .status-light { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .status-light.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-light.amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  .status-light.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .clock { font-family: var(--font-mono); font-size: 13px; color: var(--green); letter-spacing: 2px; border-left: 1px solid var(--charcoal-3); padding-left: 16px; }
+
+  .tab-bar {
+    background: var(--black-2);
+    border-bottom: 1px solid var(--charcoal-2);
+    display: flex;
+    padding: 0 20px;
+    gap: 0;
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--gray);
+    background: none;
+    border: none;
+    padding: 12px 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--bone-dim); }
+  .tab-btn.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+  .tab-btn .tab-count { display: inline-block; font-family: var(--font-mono); font-size: 9px; color: var(--gray); margin-left: 6px; background: var(--charcoal); padding: 0 5px; border-radius: 2px; }
+
+  .content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 24px 20px; }
+  .content::-webkit-scrollbar { width: 6px; }
+  .content::-webkit-scrollbar-track { background: var(--black); }
+  .content::-webkit-scrollbar-thumb { background: var(--charcoal-3); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .panel-header {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--charcoal-2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .panel-header h2 { font-family: var(--font-display); font-size: 22px; font-weight: 600; text-transform: uppercase; letter-spacing: 3px; }
+  .panel-header .panel-tag { font-family: var(--font-mono); font-size: 10px; color: var(--gray); letter-spacing: 1px; margin-left: auto; }
+  .panel-header .panel-led { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+  .card {
+    background: var(--charcoal);
+    border: 1px solid var(--charcoal-2);
+    border-radius: 2px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--charcoal-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--red);
+  }
+  .card-body { padding: 14px; }
+  .card-body h3 { font-family: var(--font-display); font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .card-body p, .card-body li { font-size: 12px; color: var(--bone-dim); line-height: 1.6; }
+  .card-body ul { list-style: none; }
+  .card-body ul li::before { content: '> '; color: var(--red); font-family: var(--font-mono); font-size: 11px; }
+  .card-body ul li { margin-bottom: 4px; }
+
+  .stat-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat { background: var(--charcoal); border: 1px solid var(--charcoal-2); padding: 14px 18px; flex: 1; text-align: center; min-width: 100px; }
+  .stat .num { font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--yellow); }
+  .stat .label { font-family: var(--font-display); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--gray); margin-top: 2px; }
+
+  .exp-item { background: var(--charcoal); border: 1px solid var(--charcoal-2); margin-bottom: 8px; border-radius: 2px; }
+  .exp-trigger { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: none; border: none; color: var(--bone); cursor: pointer; text-align: left; font-family: var(--font-body); transition: background 0.15s; }
+  .exp-trigger:hover { background: var(--charcoal-2); }
+  .exp-trigger .exp-arrow { font-family: var(--font-mono); color: var(--yellow); font-size: 14px; transition: transform 0.2s; flex-shrink: 0; }
+  .exp-trigger.open .exp-arrow { transform: rotate(90deg); }
+  .exp-trigger .exp-num { font-family: var(--font-mono); font-size: 10px; color: var(--red); flex-shrink: 0; }
+  .exp-trigger .exp-title { font-family: var(--font-display); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; flex: 1; }
+  .exp-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--charcoal-2); }
+  .exp-body.open { display: block; }
+  .exp-body .prompt { background: var(--black); border-left: 3px solid var(--yellow); padding: 12px 16px; margin: 10px 0; font-family: var(--font-mono); font-size: 11px; color: var(--bone-dim); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .exp-body .observation { font-size: 11px; color: var(--gray-light); padding: 8px 12px; background: var(--black-2); border-left: 3px solid var(--green); margin-top: 8px; }
+  .exp-body .observation strong { color: var(--yellow); font-weight: 500; }
+  .exp-body .change { font-size: 11px; color: var(--amber); padding: 8px 12px; background: var(--black-2); border-left: 3px solid var(--amber); margin-top: 4px; }
+
+  .tl { position: relative; padding-left: 32px; }
+  .tl::before { content: ''; position: absolute; left: 11px; top: 0; bottom: 0; width: 2px; background: var(--charcoal-3); }
+  .tl-item { position: relative; margin-bottom: 16px; background: var(--charcoal); border: 1px solid var(--charcoal-2); padding: 14px 18px; border-radius: 2px; }
+  .tl-item::before { content: ''; position: absolute; left: -25px; top: 16px; width: 10px; height: 10px; border-radius: 50%; background: var(--black); border: 2px solid var(--gray); }
+  .tl-item.done::before { background: var(--green); border-color: var(--green); box-shadow: 0 0 6px var(--green-dim); }
+  .tl-item .tl-week { font-family: var(--font-mono); font-size: 10px; color: var(--gray-light); letter-spacing: 1px; }
+  .tl-item h3 { font-family: var(--font-display); font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin: 2px 0 4px; }
+  .tl-item p { font-size: 12px; color: var(--bone-dim); }
+  .tl-item .tl-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .tl-item .tl-tags span { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--black); background: var(--bone-dim); padding: 2px 8px; border-radius: 1px; }
+
+  .source-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--charcoal-2); font-size: 12px; color: var(--bone-dim); }
+  .source-item:last-child { border-bottom: none; }
+  .source-tag { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--black); background: var(--yellow); padding: 1px 7px; flex-shrink: 0; height: fit-content; margin-top: 1px; }
+
+  .ws-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .ws-item { display: flex; align-items: center; gap: 10px; background: var(--charcoal); border: 1px solid var(--charcoal-2); padding: 12px 14px; text-decoration: none; color: var(--bone); transition: border-color 0.15s, background 0.15s; border-radius: 2px; cursor: default; }
+  .ws-item:hover { border-color: var(--red); background: var(--charcoal-2); }
+  .ws-item .ws-icon { font-size: 16px; flex-shrink: 0; }
+  .ws-item .ws-label { font-family: var(--font-display); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  .ws-item .ws-desc { font-size: 10px; color: var(--gray); }
+
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .swatch { flex: 1; padding: 24px 12px; text-align: center; border: 1px solid var(--charcoal-2); border-radius: 2px; min-width: 100px; }
+  .swatch .sw-name { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .swatch .sw-hex { font-family: var(--font-mono); font-size: 9px; opacity: 0.5; margin-top: 2px; }
+
+  .divider-h { border: none; border-top: 1px solid var(--charcoal-2); margin: 24px 0; }
+
+  .reflection-block { background: var(--black-2); border-left: 3px solid var(--amber); padding: 16px 20px; margin: 12px 0; }
+  .reflection-block h4 { font-family: var(--font-display); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--amber); margin-bottom: 6px; }
+  .reflection-block p { font-size: 12px; color: var(--bone-dim); line-height: 1.7; }
+
+  .key-finding { background: var(--charcoal); border: 1px solid var(--yellow); padding: 12px 18px; margin: 10px 0; border-radius: 2px; }
+  .key-finding strong { color: var(--yellow); font-family: var(--font-display); letter-spacing: 1px; text-transform: uppercase; }
+
+  .direction-card { background: var(--charcoal); border-left: 3px solid var(--red); padding: 14px 18px; margin-bottom: 12px; }
+  .direction-card .dir-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--red); }
+  .direction-card h3 { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 4px 0; }
+  .direction-card p { font-size: 12px; color: var(--bone-dim); }
+
+  .img-placeholder { background: var(--charcoal-2); border: 1px dashed var(--charcoal-3); padding: 20px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--gray); margin: 8px 0; border-radius: 2px; }
+
+  @media (max-width: 800px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .ws-grid { grid-template-columns: 1fr 1fr; }
+    .status-group .status-item { display: none; }
+    .status-group .clock { display: block; border: none; padding: 0; }
+    .topbar .brand .sub { display: none; }
+  }
+  @media (max-width: 500px) {
+    .ws-grid { grid-template-columns: 1fr; }
+    .tab-btn { font-size: 10px; padding: 10px 12px; letter-spacing: 1px; }
+    .tab-btn .tab-count { display: none; }
+    .stat { min-width: 45%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    BLACK FLAG<span class="red">*</span>
+    <span class="sub">MOTORSPORT CO. · COMMAND CENTER</span>
+  </div>
+  <div class="status-group">
+    <div class="status-item"><span class="status-light green"></span> System</div>
+    <div class="status-item"><span class="status-light amber"></span> Review</div>
+    <div class="status-item"><span class="status-light red"></span> Live</div>
+    <div class="clock" id="clock">00:00:00</div>
+  </div>
+</header>
+
+<nav class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-tab="overview">Overview <span class="tab-count">/01</span></button>
+  <button class="tab-btn" data-tab="brand">Brand <span class="tab-count">/02</span></button>
+  <button class="tab-btn" data-tab="research">Research <span class="tab-count">/03</span></button>
+  <button class="tab-btn" data-tab="interactions">Interactions <span class="tab-count">/04</span></button>
+  <button class="tab-btn" data-tab="experiments">Experiments <span class="tab-count">/05</span></button>
+  <button class="tab-btn" data-tab="process">Process <span class="tab-count">/06</span></button>
+  <button class="tab-btn" data-tab="workspace">Workspace <span class="tab-count">/07</span></button>
+</nav>
+
+<main class="content" id="mainContent">
+
+<!-- ===== OVERVIEW ===== -->
+<div class="tab-panel active" id="panel-overview">
+  <div class="panel-header">
+    <span class="panel-led"></span>
+    <h2>Mission Overview</h2>
+    <span class="panel-tag">AI-Branding-001 · STATUS: ACTIVE</span>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="num">5</div><div class="label">Info Interactions</div></div>
+    <div class="stat"><div class="num">3</div><div class="label">Direction Shifts</div></div>
+    <div class="stat"><div class="num">7</div><div class="label">Research Patterns</div></div>
+    <div class="stat"><div class="num">11+</div><div class="label">Sources</div></div>
+    <div class="stat"><div class="num">7</div><div class="label">Weeks Active</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">&#9679; Project Identity</div>
+      <div class="card-body">
+        <h3>AI Branding For Motorsport Apparel</h3>
+        <p>An experimental design investigation into whether AI can create authentic, culturally relevant brand identities for motorsport streetwear — using ChatGPT, Gemini, Midjourney, and Figma to co-create <strong>Black Flag Motorsport Co.</strong></p>
+        <div class="key-finding" style="margin-top:12px;"><strong>Curiosity Statement:</strong> How can AI generate a distinctive motorsport clothing brand identity without losing authenticity, culture, and emotional connection to racing communities?</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">&#9679; Why It Matters</div>
+      <div class="card-body">
+        <p>AI design tools often flatten style and produce repetitive visuals. Streetwear and car culture rely heavily on identity, rebellion, and uniqueness. This project explores how to bridge that gap.</p>
+        <p style="margin-top:8px;"><strong>Possible final directions:</strong></p>
+        <ul>
+          <li>Full brand identity (Black Flag Motorsport Co.)</li>
+          <li>AI-assisted branding workflow system</li>
+          <li>Streetwear capsule collection + visuals</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider-h">
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-header">&#9679; What I Need to Learn</div>
+      <div class="card-body">
+        <ul>
+          <li>AI prompting strategies for design</li>
+          <li>Streetwear branding systems</li>
+          <li>Motorsport visual language (sponsors, decals, typography)</li>
+          <li>How to control AI outputs creatively</li>
+          <li>Where the line is between AI exploration and human authorship</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">&#9679; Three Possible Directions</div>
+      <div class="card-body">
+        <ul>
+          <li><strong>Experimental motorsport brand</strong> built with AI — test if people perceive it as authentic or not</li>
+          <li><strong>AI-assisted design workflow</strong> for apparel drops — how AI speeds up concept to mockup</li>
+          <li><strong>AI-generated brand identity system</strong> — logos, typography, color, race-inspired visuals</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">&#9679; Product Definition (Refined)</div>
+      <div class="card-body">
+        <p>A motorsport streetwear identity system combining AI-assisted ideation with human-controlled refinement — logo, type, apparel applications, visual language.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BRAND ===== -->
+<div class="tab-panel" id="panel-brand">
+  <div class="panel-header">
+    <span class="panel-led"></span>
+    <h2>Brand Identity System</h2>
+    <span class="panel-tag">AI-Branding-002 · BLACK FLAG MOTORSPORT CO.</span>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">&#9679; AI Evidence — Logo Concept: "Penalty Flag in Motion"</div>
+    <div class="card-body">
+      <div class="grid-3">
+        <div>
+          <h3>Primary Mark</h3>
+          <ul>
+            <li>A black racing flag, torn / fragmented edges (speed tearing it apart)</li>
+            <li>Subtle motion streaks trailing behind</li>
+            <li>Slight forward angle (15–20&deg; tilt)</li>
+            <li>Minimal checkered distortion pattern or negative-space cut lines</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Wordmark System</h3>
+          <p style="margin-bottom:4px;">Horizontal (clean, wearable):</p>
+          <div style="font-family:var(--font-display);font-size:18px;letter-spacing:3px;color:var(--bone);">BLACK FLAG<br><span style="font-size:11px;font-weight:400;letter-spacing:4px;color:var(--gray);">MOTORSPORT CO.</span></div>
+          <p style="margin:8px 0 4px;">Typography: Condensed bold sans-serif, tight tracking, cut corners (mechanical feel), slight forward slant, broken segments (controlled glitch).</p>
+        </div>
+        <div>
+          <h3>Secondary Icon</h3>
+          <ul>
+            <li>BFMC monogram for tags, hats, small prints</li>
+            <li>Minimal flag symbol (3-4 abstract blocks)</li>
+            <li>Circular badge: "BLACK FLAG MOTORSPORT / DIVISION 01"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Color System</h3>
+  <div class="swatches">
+    <div class="swatch" style="background:#000000;border-color:#333;"><div class="sw-name" style="color:#fff;">Jet Black</div><div class="sw-hex" style="color:#666;">#000000</div></div>
+    <div class="swatch" style="background:#1A1A1A;border-color:#333;"><div class="sw-name" style="color:#ccc;">Charcoal</div><div class="sw-hex" style="color:#666;">#1A1A1A</div></div>
+    <div class="swatch" style="background:#F5F5F5;border-color:#ccc;"><div class="sw-name" style="color:#000;">Bone White</div><div class="sw-hex" style="color:#666;">#F5F5F5</div></div>
+    <div class="swatch" style="background:#FF2D2D;"><div class="sw-name" style="color:#000;">Racing Red</div><div class="sw-hex" style="color:#333;">#FF2D2D</div></div>
+    <div class="swatch" style="background:#FFD100;"><div class="sw-name" style="color:#000;">Safety Yellow</div><div class="sw-hex" style="color:#333;">#FFD100</div></div>
+  </div>
+  <p style="font-size:11px;color:var(--gray);margin-top:8px;">Use accents like race signals — not decoration. Racing Red = danger/penalty. Safety Yellow = caution flag reference.</p>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Signature Design Language</h3>
+  <div class="grid-4">
+    <div class="card"><div class="card-header">Race Control Graphics</div><div class="card-body"><ul><li>Flag icons (black, yellow, red)</li><li>Penalty codes</li><li>Lap counters</li></ul></div></div>
+    <div class="card"><div class="card-header">Telemetry Layers</div><div class="card-body"><ul><li>Speed lines</li><li>Grid overlays</li><li>Data text blocks</li></ul></div></div>
+    <div class="card"><div class="card-header">Mechanical Texture</div><div class="card-body"><ul><li>Tire marks</li><li>Carbon fiber</li><li>Asphalt grain</li></ul></div></div>
+    <div class="card"><div class="card-header">Labeling System</div><div class="card-body"><ul><li>"UNAUTHORIZED VEHICLE UNIT"</li><li>"TRACK VIOLATION"</li><li>"HIGH SPEED DIVISION"</li></ul></div></div>
+  </div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);margin:0 0 12px;">Refined Logo Concepts (Info Interaction #1)</h3>
+  <div class="grid-3">
+    <div class="direction-card" style="border-left-color:var(--yellow);">
+      <div class="dir-label">Concept 1</div>
+      <h3>Split Flag Velocity Mark</h3>
+      <p>A flag reduced to a single directional break. One solid rectangle sliced diagonally into two offset shapes — like a flag being torn by wind at high speed. Reads instantly at thumbnail size. The diagonal cut naturally implies acceleration.</p>
+    </div>
+    <div class="direction-card" style="border-left-color:var(--yellow);">
+      <div class="dir-label">Concept 2</div>
+      <h3>Monolithic "BF" Impact Block</h3>
+      <p>"B" and "F" fused into one continuous geometric block — no separation between letters. One unified shape built from straight cuts and sharp internal voids. Feels like a manufacturer mark or race team stencil.</p>
+    </div>
+    <div class="direction-card" style="border-left-color:var(--yellow);">
+      <div class="dir-label">Concept 3</div>
+      <h3>Angular Apex Flag Icon</h3>
+      <p>A triangular, forward-leaning shape with one internal notch suggesting a flag cut or airflow split. 1 triangle + 1 subtraction. Extremely scalable from favicon to full car livery. Quiet but aggressive.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESEARCH ===== -->
+<div class="tab-panel" id="panel-research">
+  <div class="panel-header">
+    <span class="panel-led"></span>
+    <h2>Research Map</h2>
+    <span class="panel-tag">AI-Branding-003 · PATTERNS, SHIFTS &amp; SOURCES</span>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:12px;">Early Patterns</h3>
+  <div class="grid-auto">
+    <div class="card"><div class="card-header">P01</div><div class="card-body"><h3>AI Defaults to Over-Design</h3><p>AI branding outputs consistently add unnecessary detail, decoration, and layering when not restricted. Every AI-generated concept needed reduction.</p></div></div>
+    <div class="card"><div class="card-header">P02</div><div class="card-body"><h3>Motorsport Identity Is Built on Reduction</h3><p>Real racing brands prioritize instant recognition at speed — simple shapes, bold contrast, minimal elements. Not visual complexity.</p></div></div>
+    <div class="card"><div class="card-header">P03</div><div class="card-body"><h3>Control Is the Real Design Skill</h3><p>The quality of output is less about prompting creativity and more about imposing constraints and editorial judgment. Designer's taste is the differentiator.</p></div></div>
+    <div class="card"><div class="card-header">P04</div><div class="card-body"><h3>Systems Outperform Single Logos</h3><p>Strong motorsport + streetwear brands rely on identity systems (livery, typography, applications) rather than isolated logo marks.</p></div></div>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin:20px 0 12px;">Additional Patterns (from Visual + Branding Analysis)</h3>
+  <div class="grid-auto">
+    <div class="card"><div class="card-header">P05</div><div class="card-body"><h3>Typography Dichotomy</h3><p>Heavy, extended, italicized sans-serifs (speed) vs utilitarian monospaced tech fonts (mechanic spec sheets, telemetry data).</p></div></div>
+    <div class="card"><div class="card-header">P06</div><div class="card-body"><h3>Functional Color as Signal</h3><p>High-contrast primaries dominating deep matte neutrals. Jet Black with sharp Racing Red acts as aggressive visual warning signal.</p></div></div>
+    <div class="card"><div class="card-header">P07</div><div class="card-body"><h3>Modular Logo Construction</h3><p>Logos built to act as crests, flags, or sponsor decals — equally at home embroidered on a jacket or vinyl-wrapped on a chassis.</p></div></div>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);margin:20px 0 12px;">Direction Shifts</h3>
+  <div class="direction-card"><div class="dir-label">Shift 01</div><h3>From Generation &rarr; Direction Control</h3><p>AI is not being used to "create logos," but to explore directions that are later refined manually. The value is in editing, curating, and rejecting AI output with intent.</p></div>
+  <div class="direction-card"><div class="dir-label">Shift 02</div><h3>Identity System Over Logo Design</h3><p>The project shifted from a single brand mark to a full identity system for Black Flag Motorsport Co. — logo, type, apparel applications, visual language.</p></div>
+  <div class="direction-card"><div class="dir-label">Shift 03</div><h3>Constraint-Led Design Strategy</h3><p>Future design process will intentionally use tight prompt constraints to simulate real motorsport design discipline. The strongest results come from separation of expressive exploration from functional identity.</p></div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Key Tensions</h3>
+  <div class="grid-2">
+    <div class="card"><div class="card-header">&#9679; Authentic vs AI-Generated Identity</div><div class="card-body"><p>How do we harness AI's generative speed without losing the gritty, human essence of underground car culture?</p></div></div>
+    <div class="card"><div class="card-header">&#9679; Clean vs Chaotic Underground Style</div><div class="card-body"><p>Finding the friction point between a structured grid-based design system and the raw, unpolished energy of the garage.</p></div></div>
+    <div class="card"><div class="card-header">&#9679; Performance vs Fashion Aesthetic</div><div class="card-body"><p>Ensuring the identity looks built for high-speed function, not just aesthetically co-opting the culture for a moodboard.</p></div></div>
+    <div class="card"><div class="card-header">&#9679; Human vs AI-Assisted Workflow</div><div class="card-body"><p>Identifying the precise moment to stop the AI and take over manually. Algorithmic perfection vs human messiness.</p></div></div>
+  </div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Sources</h3>
+  <div style="background:var(--charcoal);border:1px solid var(--charcoal-2);padding:4px 16px;">
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>Formula 1 Branding &amp; Team Identity</strong> — F1 teams, FIA media. Structured high-performance visual systems.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>Off-White Brand Analysis</strong> — Virgil Abloh. Streetwear identity systems and cultural positioning.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>AI Image Generation (Midjourney / Runway)</strong> — Tool documentation. Core to generating and iterating visuals.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>L'Art de l'Automobile</strong> — Arthur Kar. Parisian brand translating authentic car culture into high-end streetwear.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>PUMA x RHUDE Motorsport Collection</strong> — Rhuigi Villase&ntilde;or. Merging motorsport with luxury streetwear via utility silhouettes.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>"I Let AI Design a Streetwear Brand"</strong> — Rishi Saini. AI experiment highlighting the risk of losing brand character.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>Brixton x Goodyear</strong> — Heritage-driven collection combining workwear with garage-inspired racing graphics.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>Style3D AI</strong> — AI platform for rapid 3D garment prototyping and fabric simulation.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>"How AI Agents are Running Streetwear Workflows"</strong> — Rob Varon / Noibu. Human-in-the-loop AI operations.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>Red Bull Racing</strong> — Visual identity system reference. Consistency across vehicles, merch, and media.</div>
+    <div class="source-item"><span class="source-tag">Ref</span> <strong>OpenAI Prompt Engineering Guide</strong> — Structured prompts as creative direction documents.</div>
+  </div>
+</div>
+
+<!-- ===== INTERACTIONS ===== -->
+<div class="tab-panel" id="panel-interactions">
+  <div class="panel-header">
+    <span class="panel-led"></span>
+    <h2>Information Interactions</h2>
+    <span class="panel-tag">AI-Branding-004 · 5 INTERACTIONS</span>
+  </div>
+
+  <!-- II1 -->
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">II#1</span>
+      <span class="exp-title">Logo Generation: Constrained vs Unconstrained</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <p><strong>Source:</strong> ChatGPT + Google Gemini + Formula 1 branding references. Compared constrained (minimal, geometric) vs unconstrained (complex, experimental) prompts for Black Flag Motorsport Co. logo concepts.</p>
+
+      <div class="grid-2" style="margin:10px 0;">
+        <div style="background:var(--black);padding:12px;border-left:3px solid var(--red);">
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--red);margin-bottom:4px;">PROMPT 1 — CONSTRAINED</p>
+          <p style="font-size:11px;color:var(--bone-dim);">Create 6 logo concepts for Black Flag Motorsport Co. Strong geometric shapes. High contrast (black/white). Aggressive, fast, industrial tone. Avoid gradients, shadows, or overly detailed elements.</p>
+        </div>
+        <div style="background:var(--black);padding:12px;border-left:3px solid var(--amber);">
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--amber);margin-bottom:4px;">PROMPT 2 — UNCONSTRAINED</p>
+          <p style="font-size:11px;color:var(--bone-dim);">Create 6 more logo concepts with no design constraints. Make them highly detailed, experimental, and visually complex.</p>
+        </div>
+      </div>
+
+      <div class="key-finding"><strong>Key Finding:</strong> Constrained set (Set A) won on readability at speed, brand clarity, scalability, and alignment with motorsport branding. Unconstrained set (Set B) better for back graphics, posters, limited drops — but hard to scale, expensive to produce, not ideal for consistent system use. <strong>"Curation beats generation."</strong></div>
+
+      <div class="reflection-block">
+        <h4>Reflection</h4>
+        <p>This interaction changed how I think about AI-generated branding. Before, I thought stronger logos came from adding more visual effects and complexity. After studying F1 branding systems and comparing them to AI outputs, I realized the most successful motorsport logos are very simple and controlled. Brands like Ferrari, Mercedes, and McLaren rely on minimal shapes, aggressive typography, and strong contrast. AI was useful for rapid exploration, but many outputs felt unrealistic because they contained too many visual elements. The quality of AI logos depends heavily on prompt structure and human judgment.</p>
+      </div>
+
+      <div class="observation"><strong>Self-Check:</strong> (1) Simple logos remain readable and recognizable at speed. (2) Sharp angles, bold forms, forward movement communicate speed. (3) High contrast improves recognition. (4) Minimal scalable shapes work across formats. (5) Specific constraints improve output quality.</div>
+    </div>
+  </div>
+
+  <!-- II2 -->
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">II#2</span>
+      <span class="exp-title">Motorsport Branding: Recognition at Speed</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <p><strong>Source:</strong> It's Nice That + Formula 1 + Porsche Motorsport. Studied how motorsport branding builds recognition at speed, compared AI-generated concepts against real racing identities.</p>
+
+      <div class="grid-2" style="margin:10px 0;">
+        <div class="card"><div class="card-header">Real Motorsport Branding</div><div class="card-body"><ul><li>Clear silhouette</li><li>Minimal detail</li><li>Functional at distance</li><li>Strong typography</li><li>Consistent across cars/apparel/social media</li></ul></div></div>
+        <div class="card"><div class="card-header">Weak AI Branding Patterns</div><div class="card-body"><ul><li>Over-rendered</li><li>Too many gradients/effects</li><li>Generic racing symbols</li><li>Poor readability at small sizes</li><li>Looks trendy instead of timeless</li></ul></div></div>
+      </div>
+
+      <div class="key-finding"><strong>Key Finding:</strong> The strongest motorsport branding systems are extremely simple and recognizable. AI is useful for generating directions quickly, but successful outcomes still depend on human judgment, editing, and reduction. Simplicity creates memorability.</div>
+
+      <div class="reflection-block">
+        <h4>Reflection</h4>
+        <p>Before this interaction, I thought AI could generate strong branding mostly through prompt quality alone. After researching real racing identity systems and comparing against AI outputs, I realized the strongest branding comes from simplification, consistency, and human editing rather than generation itself. I also learned that AI works best as a research and iteration tool rather than a replacement for design judgment.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- II3 -->
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">II#3</span>
+      <span class="exp-title">Motorsport Logo Systems Analysis</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <p><strong>Source:</strong> Formula 1 Official Site, Scuderia Ferrari, Mercedes-AMG Petronas, McLaren. Studied professional motorsport identities to understand what makes racing logos recognizable, scalable, and effective.</p>
+
+      <div class="grid-2" style="margin:10px 0;">
+        <div style="background:var(--black);padding:12px;border-left:3px solid var(--red);">
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--red);margin-bottom:4px;">PROMPT 1 — DETAILED</p>
+          <p style="font-size:11px;color:var(--bone-dim);">"Create a detailed futuristic motorsport logo with racing graphics, flames, speed lines, and aggressive typography."</p>
+          <p style="font-size:11px;color:var(--gray-light);margin-top:4px;">Result: Visual overload. Too many competing elements — flames, clashing text styles, lost monogram. Needs ruthless simplification.</p>
+        </div>
+        <div style="background:var(--black);padding:12px;border-left:3px solid var(--green);">
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--green);margin-bottom:4px;">PROMPT 2 — MINIMAL</p>
+          <p style="font-size:11px;color:var(--bone-dim);">"Generate a minimal motorsport logo using bold geometric forms, aggressive typography, monochrome colors, and high-speed racing aesthetics."</p>
+          <p style="font-size:11px;color:var(--gray-light);margin-top:4px;">Result: Cohesive, versatile, monochromatic. Unified typography, legible monogram. "Less is more" approach worked wonders.</p>
+        </div>
+      </div>
+
+      <div class="key-finding"><strong>Key Finding:</strong> The best AI-generated logos happened when prompts focused on simplicity, geometry, and scalability instead of excessive effects. Real motorsport branding relies on restraint and consistency — which guided stronger AI outputs.</div>
+
+      <div class="observation"><strong>Notes:</strong> Curation beats generation. Typography hierarchy drives the brand. Restraint makes a logo functional.</div>
+    </div>
+  </div>
+
+  <!-- II4 -->
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">II#4</span>
+      <span class="exp-title">OpenAI Prompt Engineering Guide</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <p><strong>Source:</strong> OpenAI Prompt Engineering Guide. Studied how structured prompts improve AI-generated outputs. Tested vague vs structured prompts for Black Flag Motorsport Co. logo concepts.</p>
+
+      <div class="grid-2" style="margin:10px 0;">
+        <div style="background:var(--black);padding:12px;border-left:3px solid var(--red);">
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--red);margin-bottom:4px;">WEAK PROMPT</p>
+          <p style="font-size:20px;font-weight:700;color:var(--bone);font-family:var(--font-display);letter-spacing:1px;">"Make a cool racing logo."</p>
+          <p style="font-size:11px;color:var(--gray-light);margin-top:4px;">Result: Generic racing imagery, inconsistent style, lacks identity, too detailed.</p>
+        </div>
+        <div style="background:var(--black);padding:12px;border-left:3px solid var(--green);">
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--green);margin-bottom:4px;">STRUCTURED PROMPT</p>
+          <p style="font-size:11px;color:var(--bone-dim);">"Create a minimal motorsport logo for Black Flag Motorsport Co. inspired by F1, endurance racing, and underground car culture. Requirements: bold geometric forms, aggressive symmetry, high contrast, scalable iconography, suitable for apparel and decals, avoid excessive detail, recognizable at small sizes."</p>
+          <p style="font-size:11px;color:var(--gray-light);margin-top:4px;">Result: Stronger silhouette, clearer identity, more usable for apparel, closer to professional motorsport branding.</p>
+        </div>
+      </div>
+
+      <div class="key-finding"><strong>Key Finding:</strong> Strong prompts function more like creative direction than simple requests. The best branding outputs came from prompts combining visual references, emotional direction, design constraints, and application requirements. This changes the workflow from randomly generating logos to building structured prompt systems.</div>
+
+      <div class="reflection-block">
+        <h4>Reflection</h4>
+        <p>Before this research, I approached AI mostly as a fast image generator. I learned that quality depends heavily on prompt structure and clarity. The strongest results came from prompts acting more like creative direction documents. Many early outputs felt generic or disconnected from professional branding systems. The research showed me that human judgment is still essential — AI could not determine whether a logo was practical, recognizable, or aligned with the brand identity.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- II5 -->
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">II#5</span>
+      <span class="exp-title">Iterative Logo Development Workflow</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <p><strong>Source:</strong> ChatGPT + Google Gemini. Tested how prompt refinement, constraints, and iteration could produce stronger motorsport-inspired logo systems. Developed a structured workflow.</p>
+
+      <div class="key-finding" style="margin:10px 0;"><strong>Key Discovery:</strong> Better prompts came from evaluation and iteration, not from making one giant prompt. The workflow: Research &rarr; Prompt &rarr; Generate &rarr; Evaluate &rarr; Refine Prompt &rarr; Generate Again &rarr; Compare Results &rarr; Application Testing &rarr; Refinement.</div>
+
+      <div style="background:var(--black);padding:12px;border-left:3px solid var(--yellow);margin:10px 0;">
+        <p style="font-family:var(--font-mono);font-size:10px;color:var(--yellow);margin-bottom:4px;">PROMPT 1 — BROAD EXPLORATION</p>
+        <p style="font-size:11px;color:var(--bone-dim);">"Generate 3 logo concepts for a motorsport clothing brand called Black Flag Motorsport Co. The brand should feel aggressive, fast, and premium."</p>
+        <p style="font-size:11px;color:var(--gray-light);margin-top:4px;">Feedback: Too generic. Looked like esports logos. Overly detailed. Broad prompts created decorative branding rather than realistic systems.</p>
+      </div>
+
+      <div style="background:var(--black);padding:12px;border-left:3px solid var(--green);margin:10px 0;">
+        <p style="font-family:var(--font-mono);font-size:10px;color:var(--green);margin-bottom:4px;">PROMPT 2 — MOTORSPORT CONSTRAINED</p>
+        <p style="font-size:11px;color:var(--bone-dim);">"Generate 3 refined logo directions for Black Flag Motorsport Co. inspired by real motorsport branding principles. Use only simple geometric forms. Prioritize readability at speed, silhouette recognition, aggressive motion, and usability across apparel and racing applications."</p>
+      </div>
+
+      <div class="observation"><strong>Workflow documented:</strong> Research &rarr; Prompt &rarr; Generate &rarr; Evaluate &rarr; Refine Prompt &rarr; Generate Again &rarr; Compare Results &rarr; Application Testing &rarr; Refinement</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EXPERIMENTS ===== -->
+<div class="tab-panel" id="panel-experiments">
+  <div class="panel-header">
+    <span class="panel-led"></span>
+    <h2>Experiment Log</h2>
+    <span class="panel-tag">AI-Branding-005 · PROMPTS &amp; OUTPUTS</span>
+  </div>
+
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">E1</span>
+      <span class="exp-title">AI Logo Generation</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <div class="grid-3" style="margin:10px 0;">
+        <div><strong style="color:var(--green);">Worked:</strong> Fast iteration</div>
+        <div><strong style="color:var(--red);">Failed:</strong> Too polished / generic</div>
+        <div><strong style="color:var(--yellow);">Next:</strong> Add constraints + imperfections</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">E2</span>
+      <span class="exp-title">Typography-Focused Prompts</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <div class="grid-3" style="margin:10px 0;">
+        <div><strong style="color:var(--green);">Worked:</strong> Strong identity direction</div>
+        <div><strong style="color:var(--red);">Failed:</strong> Lack of consistency</div>
+        <div><strong style="color:var(--yellow);">Next:</strong> Build a system instead of single outputs</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">E3</span>
+      <span class="exp-title">Prompt: F1 + Underground Racing Logo</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <div class="prompt">Create a motorsport streetwear logo inspired by F1 and underground racing culture.</div>
+      <div class="observation"><strong>Output:</strong> Strong, clean start with solid readability and clear motorsport influence, but plays things too safe. Feels like a generic F1-inspired brand rather than something distinct. The "Black Flag" concept (disqualification, rebellion) isn't being fully used — the checkered flag suggests victory instead of tension. Overall composition slightly overloaded with extra elements that dilute the main mark.</div>
+      <div class="change"><strong>Change:</strong> Add "gritty, anti-corporate, distorted typography"</div>
+    </div>
+  </div>
+
+  <div class="exp-item">
+    <button class="exp-trigger" onclick="toggleExp(this)">
+      <span class="exp-arrow">&#96539;</span>
+      <span class="exp-num">E4</span>
+      <span class="exp-title">Prompt: Aggressive Streetwear + Sponsor Aesthetics</span>
+      <span class="exp-status">Complete</span>
+    </button>
+    <div class="exp-body">
+      <div class="prompt">Generate aggressive streetwear branding with racing sponsor aesthetics.</div>
+      <div class="observation"><strong>Output:</strong> This hits much harder. The sponsor grid, aggressive typography, and layered decals really sell that underground racing/streetwear crossover. But it almost swings too far into chaos — everything competing for attention instead of building a clear system. The main "BLACK FLAG" mark is strong but getting diluted by heavy secondary logos, warnings, and filler text. Some elements (skull/disqualified graphic, multiple slogans) start to feel slightly cliché. The concept is way closer now.</div>
+      <div class="change"><strong>Change:</strong> Pull back about 20-30% of the noise and tighten the visual system so each element feels purposeful.</div>
+    </div>
+  </div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Prompt Structure System (from II#4)</h3>
+  <div class="grid-3">
+    <div class="card"><div class="card-header">Brand Identity</div><div class="card-body"><p>Black Flag Motorsport Co.</p></div></div>
+    <div class="card"><div class="card-header">Visual References</div><div class="card-body"><p>F1, Endurance Racing, Streetwear, Japanese tuning culture</p></div></div>
+    <div class="card"><div class="card-header">Constraints</div><div class="card-body"><p>Minimal, scalable, high contrast, simple geometry</p></div></div>
+    <div class="card"><div class="card-header">Emotional Direction</div><div class="card-body"><p>Aggressive, fast, rebellious, technical</p></div></div>
+    <div class="card"><div class="card-header">Improved AI Outputs</div><div class="card-body"><p>Cleaner logos, more consistency, better branding systems</p></div></div>
+    <div class="card"><div class="card-header">Next Move</div><div class="card-body"><p>Develop a reusable motorsport branding prompt framework, test across multiple AI models</p></div></div>
+  </div>
+</div>
+
+<!-- ===== PROCESS ===== -->
+<div class="tab-panel" id="panel-process">
+  <div class="panel-header">
+    <span class="panel-led"></span>
+    <h2>Process &amp; Timeline</h2>
+    <span class="panel-tag">AI-Branding-006 · WEEKS 5-11 + REFLECTIONS</span>
+  </div>
+
+  <div class="tl">
+    <div class="tl-item done"><div class="tl-week">Week 5</div><h3>Define Direction + Build Workspace</h3><p>Setup Milanote, refine inquiry. Tools: Milanote, ChatGPT. Output: Command Center. Success: Clear structure.</p></div>
+    <div class="tl-item done"><div class="tl-week">Week 6</div><h3>Research Depth</h3><p>Collect 6-8 sources. Tools: Web, Pinterest, articles. Output: Research map. Success: Patterns identified.</p><div class="tl-tags"><span>Expanded research</span><span>Source collection</span><span>Pattern analysis</span></div></div>
+    <div class="tl-item done"><div class="tl-week">Week 7</div><h3>Research Synthesis</h3><p>Analyze patterns, refine direction. Output: Insights + refined concept. Success: Clear creative direction.</p><div class="tl-tags"><span>Logo system refinement</span><span>Brand direction</span></div></div>
+    <div class="tl-item done"><div class="tl-week">Week 8</div><h3>AI Workflow Testing</h3><p>Prompt experiments, compare tools. Tools: Midjourney, ChatGPT. Output: Prompt pack. Success: Repeatable results.</p></div>
+    <div class="tl-item"><div class="tl-week">Week 9</div><h3>Define Product</h3><p>Plan brand / system. Output: Product plan. Success: Clear build direction.</p></div>
+    <div class="tl-item"><div class="tl-week">Week 10</div><h3>Build Prototype</h3><p>Design logos, visuals, system. Tools: Figma, AI tools. Output: Concept. Success: Functional concept.</p></div>
+    <div class="tl-item"><div class="tl-week">Week 11 (Final)</div><h3>Refine + Publish</h3><p>Critique, revise, build site. Output: Sweatshirt Mockup. Success: Clear narrative + polished work.</p></div>
+  </div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin:0 0 12px;">Week 6 Reflection</h3>
+  <div class="reflection-block">
+    <p>This week made me realize something I've been circling around the whole time. AI only really works well when I already know exactly what I'm trying to get out of it. The quality of the output completely depends on the quality of the prompt, and good prompts come from actually understanding design. You need real design vocabulary — knowing what "aggressive geometry" actually looks like, understanding why a logo has to work at 16px, or being able to define the visual language of motorsport branding instead of vaguely chasing a vibe.</p>
+    <p style="margin-top:8px;">Honestly, the research side ended up being more valuable than the generation itself. Going through racing identities in Milanote, collecting references, and breaking down patterns taught me more than the AI outputs did. What's been frustrating is how fast AI work starts to feel generic if the constraints aren't super specific. Designs that look cool for two seconds on a mood board but completely fall apart when you think about embroidery, decals, or single-color printing.</p>
+    <p style="margin-top:8px;">I've had to get way more intentional about treating bad outputs as part of the process instead of failures. Sometimes a terrible result is more useful because it helps me figure out exactly why something doesn't work. Going into Week 7, I keep thinking about where the line is between AI-assisted and AI-dependent. I still want the final outcome to feel like an actual identity with its own point of view, not just another generic motorsport brand.</p>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin:20px 0 12px;">Week 7 Reflection</h3>
+  <div class="reflection-block">
+    <p>This week reinforced a key insight: AI functions far better as an ideation and iteration tool than as a final branding solution. Most raw AI-generated logos lacked the simplicity and intentionality seen in successful motorsport identities, but outputs improved significantly when prompts emphasized minimal shapes, aggressive silhouettes, racing visibility, and scalability across apparel and decals. Combining research with AI prompting also proved more effective than relying on prompts alone.</p>
+    <p style="margin-top:8px;">The central question heading into next week is how to integrate AI workflows into branding development while still preserving human creative judgment and brand authenticity.</p>
+  </div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Open Questions</h3>
+  <div class="grid-3">
+    <div class="card"><div class="card-header">&#9679; Control vs Generation Balance</div><div class="card-body"><p>Where is the line between AI exploration and human authorship in identity design?</p></div></div>
+    <div class="card"><div class="card-header">&#9679; Constraint Design Strategy</div><div class="card-body"><p>What specific constraints produce the most authentic motorsport-level design outcomes?</p></div></div>
+    <div class="card"><div class="card-header">&#9679; System Thinking</div><div class="card-body"><p>How can a single AI-generated concept evolve into a consistent multi-application brand system?</p></div></div>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin:20px 0 12px;">Next Moves</h3>
+  <div class="grid-2">
+    <div class="direction-card" style="border-left-color:var(--green);"><div class="dir-label">Next Move 01</div><h3>Stricter Logo Generation</h3><p>Re-run logo generation with even stricter constraints — 1-2 shapes max, no texture, fixed grid system. Begin translating strongest output into wordmark, apparel lockup, simple livery concept.</p></div>
+    <div class="direction-card" style="border-left-color:var(--green);"><div class="dir-label">Next Move 02</div><h3>Develop Prompt Framework</h3><p>Build a reusable motorsport branding prompt framework and test it across multiple AI image models to compare consistency, originality, and branding quality.</p></div>
+  </div>
+</div>
+
+<!-- ===== WORKSPACE ===== -->
+<div class="tab-panel" id="panel-workspace">
+  <div class="panel-header">
+    <span class="panel-led"></span>
+    <h2>Workspace</h2>
+    <span class="panel-tag">AI-Branding-007 · LINKS &amp; ASSETS</span>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:12px;">Project Links</h3>
+  <div class="ws-grid">
+    <div class="ws-item"><span class="ws-icon">&#9670;</span><div><div class="ws-label">Milanote Board</div><div class="ws-desc">Mood boards, territory mapping, references</div></div></div>
+    <div class="ws-item"><span class="ws-icon">&#9632;</span><div><div class="ws-label">Figma Brand System</div><div class="ws-desc">Logo, colors, typography, components</div></div></div>
+    <div class="ws-item"><span class="ws-icon">&#9733;</span><div><div class="ws-label">Prompt Log</div><div class="ws-desc">Full AI interaction history</div></div></div>
+    <div class="ws-item"><span class="ws-icon">&#9783;</span><div><div class="ws-label">Research Archive</div><div class="ws-desc">Articles, images, source notes</div></div></div>
+    <div class="ws-item"><span class="ws-icon">&#9881;</span><div><div class="ws-label">Experiment Log</div><div class="ws-desc">Structured experiment records</div></div></div>
+    <div class="ws-item"><span class="ws-icon">&#10003;</span><div><div class="ws-label">Case Study Draft</div><div class="ws-desc">Portfolio case study in progress</div></div></div>
+  </div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Visual + Branding Pattern Analysis</h3>
+  <div class="grid-2">
+    <div class="card"><div class="card-header">Typography Styles</div><div class="card-body"><p>A stark dichotomy: heavy, extended, italicized sans-serifs (speed/momentum) slammed against utilitarian monospaced tech fonts (mechanic spec sheets, telemetry data).</p></div></div>
+    <div class="card"><div class="card-header">Color Palettes</div><div class="card-body"><p>High-contrast primaries dominating deep matte neutrals. Jet Black paired with sharp Racing Red as an aggressive visual warning signal.</p></div></div>
+    <div class="card"><div class="card-header">Motorsport Aesthetics</div><div class="card-body"><p>Functional hardware, reflective 3M piping, sponsor-block grid layouts, checkerboard fragmentation, hazard tape motifs.</p></div></div>
+    <div class="card"><div class="card-header">AI-Generated Trends</div><div class="card-body"><p>Tendency toward hyper-smooth, overly symmetrical logo marks, flawless gradients, and a lack of visual "noise" or imperfection.</p></div></div>
+    <div class="card"><div class="card-header">Logo Construction</div><div class="card-body"><p>Modular systems built to act as crests, flags, or sponsor decals — equally at home embroidered on a jacket or vinyl-wrapped on a chassis.</p></div></div>
+    <div class="card"><div class="card-header">Minimal vs Aggressive</div><div class="card-body"><p>Heritage brands lean toward minimal, embroidered crests. Underground streetwear embraces aggressive, oversized, multi-placement screen prints that dominate the garment.</p></div></div>
+  </div>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Image Assets (Milanote)</h3>
+  <div class="grid-3">
+    <div class="card"><div class="card-header">Entry 1 — Logo Attempt</div><div class="card-body"><div class="img-placeholder">Image: ChatGPT Image May 3, 2026</div></div></div>
+    <div class="card"><div class="card-header">Entry 2 — Refined Version</div><div class="card-body"><div class="img-placeholder">Image: ChatGPT Image May 3, 2026</div></div></div>
+    <div class="card"><div class="card-header">Prompt Comparison</div><div class="card-body"><div class="img-placeholder">Screenshots from II#1-5</div></div></div>
+  </div>
+  <p style="font-size:11px;color:var(--gray);margin-top:8px;">Images are hosted on Milanote. Update image URLs or replace with local files when publishing.</p>
+
+  <hr class="divider-h">
+
+  <h3 style="font-family:var(--font-display);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin:0 0 12px;">Tools Used</h3>
+  <div class="stat-row">
+    <div class="stat"><div class="num" style="font-size:20px;">ChatGPT</div><div class="label">Primary AI</div></div>
+    <div class="stat"><div class="num" style="font-size:20px;">Gemini</div><div class="label">Comparison</div></div>
+    <div class="stat"><div class="num" style="font-size:20px;">Milanote</div><div class="label">Research Board</div></div>
+    <div class="stat"><div class="num" style="font-size:20px;">Figma</div><div class="label">Brand System</div></div>
+    <div class="stat"><div class="num" style="font-size:20px;">Midjourney</div><div class="label">Visual Gen</div></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    document.getElementById('mainContent').scrollTop = 0;
+  });
+});
+function toggleExp(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
